@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -49,6 +50,7 @@ func (n Note) Save() error {
 }
 
 func CreateFilename(start time.Time, end time.Time, name string) string {
+	var nonAlphanumericRegex = regexp.MustCompile(`[^a-zA-Z0-9 ]+`)
 	layoutStart := "2006-01-02-15:04"
 	layoutEnd := "15:04"
 
@@ -56,7 +58,7 @@ func CreateFilename(start time.Time, end time.Time, name string) string {
 		"%s-%s-%s",
 		start.Format(layoutStart),
 		end.Format(layoutEnd),
-		strings.ReplaceAll(name, " ", "-"),
+		strings.ReplaceAll(nonAlphanumericRegex.ReplaceAllString(name, ""), " ", "-"),
 	)
 }
 

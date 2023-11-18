@@ -109,12 +109,14 @@ func ActiveEvents(events []Event) []Event {
 }
 
 func (event Event) ToString() string {
-	return fmt.Sprintf(`---
+	content := fmt.Sprintf(`---
 title: %s
 attendees: %s
 time: %s
 ---
 
 ---
-notes: %s`, event.Summary, event.stringAttendees(), event.stringTime(), event.Details)
+notes: %s`, event.Summary, event.stringAttendees(), event.stringTime(), strings.Replace(event.Details, `\n`, "\n", -1))
+
+	return content
 }
