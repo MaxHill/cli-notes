@@ -1,10 +1,13 @@
-use std::{collections::HashMap, fs::File};
+use std::{
+    collections::HashMap,
+    fs::{self, File},
+};
 
 use anyhow::Context;
 use handlebars::Handlebars;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct Config {
     editor: String,
     notes_dir: String,
@@ -15,23 +18,23 @@ struct Config {
 }
 
 fn main() -> anyhow::Result<()> {
-    let config = Config {
-        editor: "vim".to_string(),
-        notes_dir: "/tmp/".to_string(),
-        templates_dir: "./test-data".to_string(),
-        subcommands: HashMap::from([]),
-        meta: HashMap::from([("who".to_string(), "am I really?".to_string())]),
-    };
-
-    let file_path = create_from_template(&config)?;
+    let config = get_config("./test-config/")?;
+    let file_path = create_from_template(&config, "test-template", "test-template.md")?;
 
     println!("Created: {}", file_path);
     Ok(())
 }
 
-fn create_from_template(config: &Config) -> anyhow::Result<String> {
-    let template = "test-template";
-    let output_file_path = config.notes_dir.to_owned() + "test-template.md";
+fn get_config(config_dir: &str) -> anyhow::Result<Config> {
+    let filename = format!("{}config.toml", config_dir);
+    let contents = fs::read_to_string(&filename)
+        .with_context(|| format!("Could not find config file: {:?}", filename))?;
+    toml::from_str::<Config>(&contents)
+        .with_context(|| format!("Could not construct Config from {:?}", contents))
+}
+
+fn create_from_template(config: &Config, template: &str, name: &str) -> anyhow::Result<String> {
+    let output_file_path = config.notes_dir.to_owned() + name;
 
     let mut handlebars = Handlebars::new();
 
@@ -58,4 +61,37 @@ fn create_from_template(config: &Config) -> anyhow::Result<String> {
         })?;
 
     Ok(output_file_path)
+}
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+
+    #[test]
+    fn it_can_get_config_from_file() {
+        match get_config("./test-config/") {
+            Ok(config) => {
+                assert_eq!(config.editor, "vim");
+            }
+            Err(e) => {
+                panic!("Error when getting config: {}", e);
+            }
+        };
+    }
+
+    #[test]
+    fn it_fails_if_config_does_not_exist() {
+        match get_config("./does-not-exist/") {
+            Ok(config) => {
+                panic!("Did not error when it should have: {:?}", config);
+            }
+            Err(e) => {
+                assert_eq!(
+                    format!("{}", e),
+                    "Could not find config file: \"./does-not-exist/config.toml\""
+                );
+            }
+        };
+    }
 }
