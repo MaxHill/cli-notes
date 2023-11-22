@@ -2,20 +2,36 @@ pub mod config;
 use std::fs::File;
 
 use anyhow::Context;
-use config::{get_config, Config};
+use clap::{command, Arg, Command};
+use config::Config;
 use handlebars::Handlebars;
 
-fn main() -> anyhow::Result<()> {
-    let config = get_config("./test-config/")?;
-    let file_path = create_from_template(&config, "test-template", "test-template.md")?;
+use crate::config::get_config_path;
 
-    println!("Created: {}", file_path);
+fn cmd() -> Command {
+    command!() // requires `cargo` feature
+        .arg(
+            Arg::new("config-path")
+                .short('c')
+                .long("config-path")
+                .help("Provide a path to the config directory. Default is $XDG_CONFIG_HOME"),
+        )
+}
+
+fn main() -> anyhow::Result<()> {
+    let matches = cmd().get_matches();
+
+    let config_path = get_config_path(matches.get_one::<String>("config-path"))?;
+    let config = Config::new_from_path(config_path)?;
+
+    let created_file = create_from_template(&config, "test-template", "test-template.md")?;
+
+    println!("{}", created_file);
     Ok(())
 }
 
 fn create_from_template(config: &Config, template: &str, name: &str) -> anyhow::Result<String> {
     let output_file_path = config.notes_dir.to_owned() + name;
-
     let mut handlebars = Handlebars::new();
 
     let mut output_file = File::create(&output_file_path)

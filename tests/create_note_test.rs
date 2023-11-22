@@ -28,10 +28,10 @@ use std::process::Command; // Run programs
 fn can_create_a_note() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("notes-cli")?;
 
-    cmd.arg("foobar").arg("test/file/doesnt/exist");
+    cmd.arg("--config-path").arg("./test-config");
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains("Created: /tmp/test-template.md"));
+        .stdout(predicate::str::contains("/tmp/test-template.md"));
 
     // cmd.assert()
     //     .failure()
