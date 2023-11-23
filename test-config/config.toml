@@ -1,5 +1,5 @@
 editor = "vim"
-notes_dir = "/tmp/"
+notes_dir = "/tmp/cli-notes-test-dir"
 templates_dir = "./test-config/templates"
 
 [subcommands]

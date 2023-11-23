@@ -1,5 +1,4 @@
 use anyhow::Context;
-use clap::ArgMatches;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -7,11 +6,16 @@ use std::{
     path::{Path, PathBuf},
 };
 
-#[derive(Debug, Serialize, Deserialize)]
+fn default_file_md() -> String {
+    "md".to_string()
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
+    #[serde(default = "default_file_md")]
+    pub note_file_type: String,
     pub editor: String,
-    pub notes_dir: String,
-    pub templates_dir: String,
+    pub notes_dir: PathBuf,
+    pub templates_dir: PathBuf,
 
     pub subcommands: HashMap<String, String>,
     pub meta: HashMap<String, String>,

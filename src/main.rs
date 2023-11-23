@@ -1,20 +1,44 @@
 pub mod config;
-use std::fs::File;
+pub mod note_from_template;
 
-use anyhow::Context;
+use crate::{config::get_config_path, note_from_template::NoteFromTemplate};
+use anyhow::anyhow;
 use clap::{command, Arg, Command};
 use config::Config;
-use handlebars::Handlebars;
-
-use crate::config::get_config_path;
 
 fn cmd() -> Command {
     command!() // requires `cargo` feature
+        .propagate_version(true)
+        .subcommand_required(true)
+        .arg_required_else_help(true)
         .arg(
             Arg::new("config-path")
                 .short('c')
                 .long("config-path")
                 .help("Provide a path to the config directory. Default is $XDG_CONFIG_HOME"),
+        )
+        .subcommand(new())
+}
+
+fn new() -> Command {
+    Command::new("new")
+        .about("Creates note from specified template")
+        .arg(
+            Arg::new("name")
+                .required(true)
+                .help("Name of the note"),
+        )
+        .arg(
+            Arg::new("template")
+                .short('t')
+                .long("template")
+                .help("Template to be used. Name of template file. Ex. given template file: ./template/my-template.hbs Flag should look like this: --template my-template "),
+        )
+        .arg(
+            Arg::new("name-template")
+                .short('n')
+                .long("name-template")
+                .help("Template string for name"),
         )
 }
 
@@ -24,37 +48,22 @@ fn main() -> anyhow::Result<()> {
     let config_path = get_config_path(matches.get_one::<String>("config-path"))?;
     let config = Config::new_from_path(config_path)?;
 
-    let created_file = create_from_template(&config, "test-template", "test-template.md")?;
+    match matches.subcommand() {
+        Some(("new", sub_matches)) => {
+            let template = sub_matches.get_one::<String>("template");
+            let name = sub_matches
+                .get_one::<String>("name")
+                .ok_or(anyhow!("No name specified"))?;
+            let name_template = sub_matches.get_one::<String>("name-template");
+            // let created_file = create_from_template(&config, "test-template", "test-template.md")?;
+            let note_from_template =
+                NoteFromTemplate::new(&config, template, name.to_string(), name_template);
+            let created_file = note_from_template.write()?;
 
-    println!("{}", created_file);
+            println!("{}", created_file.display());
+        }
+        _ => unreachable!("Exhausted list of subcommands and subcommand_required prevents `None`"),
+    }
+
     Ok(())
-}
-
-fn create_from_template(config: &Config, template: &str, name: &str) -> anyhow::Result<String> {
-    let output_file_path = config.notes_dir.to_owned() + name;
-    let mut handlebars = Handlebars::new();
-
-    let mut output_file = File::create(&output_file_path)
-        .with_context(|| format!("Could not create file or directory {:?}", output_file_path))?;
-
-    handlebars
-        .register_templates_directory(".hbs", &config.templates_dir)
-        .with_context(|| {
-            format!(
-                "Could not register teamplate directory {}",
-                config.templates_dir
-            )
-        })?;
-
-    let data = serde_json::to_value(config).context("Could not serialize config")?;
-    handlebars
-        .render_to_write(template, &data, &mut output_file)
-        .with_context(|| {
-            format!(
-                "Could not write template {} to file {:?}",
-                template, output_file_path
-            )
-        })?;
-
-    Ok(output_file_path)
 }

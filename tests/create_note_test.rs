@@ -1,6 +1,7 @@
 use assert_cmd::prelude::*; // Add methods on commands
-use predicates::prelude::*; // Used for writing assertions
-use std::process::Command; // Run programs
+use predicates::prelude::*;
+use std::{fmt::Display, fs, path::PathBuf, process::Command};
+use uuid::Uuid; // Used for writing assertions // Run programs
 
 /// Copy files from source to destination recursively.
 // fn copy_recursively(source: impl AsRef<Path>, destination: impl AsRef<Path>) -> io::Result<()> {
@@ -17,25 +18,104 @@ use std::process::Command; // Run programs
 //     Ok(())
 // }
 //
-// fn setup_test_config() -> anyhow::Result<String> {
-//     let config_dir: String = "/tmp/cli-notes-test-dir".to_string();
-//     fs::remove_dir_all(&config_dir)?;
-//     fs::create_dir_all(&config_dir)?;
-//     Ok(config_dir)
-// }
+//
+//
+fn unique_file_name<N, E>(name: N, ext: E) -> String
+where
+    N: Into<String> + Display,
+    E: std::convert::AsRef<std::ffi::OsStr>,
+{
+    let mut name = PathBuf::from(format!("{}-{}", name, Uuid::new_v4()));
+    name.set_extension(ext);
+
+    name.to_string_lossy().to_string()
+}
+fn setup_notes_dir() -> anyhow::Result<PathBuf> {
+    // Path must match with ../test-config/config.toml
+    let notes_dir: PathBuf = PathBuf::from("/tmp/cli-notes-test-dir");
+    fs::create_dir_all(&notes_dir)?;
+    Ok(notes_dir)
+}
 
 #[test]
-fn can_create_a_note() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin("notes-cli")?;
+fn can_create_a_note_from_a_template() -> Result<(), Box<dyn std::error::Error>> {
+    let name = unique_file_name("test_name", "md");
+    let note_path = setup_notes_dir()?.join(&name);
 
-    cmd.arg("--config-path").arg("./test-config");
+    let mut cmd = Command::cargo_bin("notes-cli")?;
+    cmd.args(["--config-path", "./test-config"])
+        .arg("new")
+        .arg(&name)
+        .args(["--template", "test-template"]);
+
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains("/tmp/test-template.md"));
+        .stdout(predicate::str::contains(&name));
 
-    // cmd.assert()
-    //     .failure()
-    //     .stderr(predicate::str::contains("could not read file"));
+    let contents = fs::read_to_string(&note_path).unwrap();
+    assert!(predicate::str::contains("Hello Max Hill!").eval(&contents));
 
-    Ok(())
+    Ok(fs::remove_file(&note_path)?)
+}
+
+#[test]
+fn can_create_a_note_with_a_name_template() -> Result<(), Box<dyn std::error::Error>> {
+    let name = unique_file_name("test_name", "md");
+    let note_output = setup_notes_dir()?;
+    let expected_output_filename = note_output.clone().join(format!("test_template_{}", name));
+
+    let mut cmd = Command::cargo_bin("notes-cli")?;
+    cmd.args(["--config-path", "./test-config"])
+        .arg("new")
+        .arg(&name)
+        .args(["--name-template", "test_template_{{name}}"]);
+
+    cmd.assert().success().stdout(predicate::str::contains(
+        expected_output_filename.to_string_lossy(),
+    ));
+
+    Ok(fs::remove_file(expected_output_filename)?)
+}
+
+#[test]
+fn can_create_a_note_without_a_template() -> Result<(), Box<dyn std::error::Error>> {
+    let name = unique_file_name("test_name", "md");
+    let note_path = setup_notes_dir()?.join(&name);
+
+    let mut cmd = Command::cargo_bin("notes-cli")?;
+    cmd.args(["--config-path", "./test-config"])
+        .arg("new")
+        .arg(&name);
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains(note_path.to_string_lossy()));
+
+    let contents = fs::read_to_string(&note_path).unwrap();
+    assert_eq!("", contents);
+
+    Ok(fs::remove_file(&note_path)?)
+}
+
+#[test]
+fn can_use_the_default_filetype() -> Result<(), Box<dyn std::error::Error>> {
+    let name = unique_file_name("test_name", "");
+    let note_path = setup_notes_dir()?.join(&name);
+
+    let mut cmd = Command::cargo_bin("notes-cli")?;
+    cmd.args(["--config-path", "./test-config"])
+        .arg("new")
+        .arg(&name);
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains(note_path.to_string_lossy()));
+
+    let contents = fs::read_to_string(format!("{}.md", note_path.to_string_lossy())).unwrap();
+    assert_eq!("", contents);
+
+    Ok(fs::remove_file(format!(
+        "{}.md",
+        note_path.to_string_lossy()
+    ))?)
 }
