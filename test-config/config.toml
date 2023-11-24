@@ -12,4 +12,6 @@ new-meeting = "create-meetings-binary {{setup.notes-dir}}"
 author = "Max"
 list-flags = "-la"
 who = "Max Hill"
+# timestamp = "1700766386383"
+timestamp = "2023-01-02T18:00:00"
 

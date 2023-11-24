@@ -32,13 +32,13 @@ fn new() -> Command {
             Arg::new("template")
                 .short('t')
                 .long("template")
-                .help("Template to be used. Name of template file. Ex. given template file: ./template/my-template.hbs Flag should look like this: --template my-template "),
+                .help("Handlebars template file to be used. Ex. given template file: ./template/my-template.hbs Flag should look like this: --template my-template "),
         )
         .arg(
             Arg::new("name-template")
                 .short('n')
                 .long("name-template")
-                .help("Template string for name"),
+                .help("Handlebars template string for name"),
         )
 }
 

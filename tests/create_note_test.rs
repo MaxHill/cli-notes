@@ -1,25 +1,9 @@
+use anyhow::Context;
 use assert_cmd::prelude::*; // Add methods on commands
 use predicates::prelude::*;
 use std::{fmt::Display, fs, path::PathBuf, process::Command};
 use uuid::Uuid; // Used for writing assertions // Run programs
 
-/// Copy files from source to destination recursively.
-// fn copy_recursively(source: impl AsRef<Path>, destination: impl AsRef<Path>) -> io::Result<()> {
-//     fs::create_dir_all(&destination)?;
-//     for entry in fs::read_dir(source)? {
-//         let entry = entry?;
-//         let filetype = entry.file_type()?;
-//         if filetype.is_dir() {
-//             copy_recursively(entry.path(), destination.as_ref().join(entry.file_name()))?;
-//         } else {
-//             fs::copy(entry.path(), destination.as_ref().join(entry.file_name()))?;
-//         }
-//     }
-//     Ok(())
-// }
-//
-//
-//
 fn unique_file_name<N, E>(name: N, ext: E) -> String
 where
     N: Into<String> + Display,
@@ -30,6 +14,7 @@ where
 
     name.to_string_lossy().to_string()
 }
+
 fn setup_notes_dir() -> anyhow::Result<PathBuf> {
     // Path must match with ../test-config/config.toml
     let notes_dir: PathBuf = PathBuf::from("/tmp/cli-notes-test-dir");
@@ -52,7 +37,9 @@ fn can_create_a_note_from_a_template() -> Result<(), Box<dyn std::error::Error>>
         .success()
         .stdout(predicate::str::contains(&name));
 
-    let contents = fs::read_to_string(&note_path).unwrap();
+    let contents = fs::read_to_string(&note_path)
+        .with_context(|| format!("Could not: read file {:?}", &note_path))
+        .unwrap();
     assert!(predicate::str::contains("Hello Max Hill!").eval(&contents));
 
     Ok(fs::remove_file(&note_path)?)
@@ -91,7 +78,9 @@ fn can_create_a_note_without_a_template() -> Result<(), Box<dyn std::error::Erro
         .success()
         .stdout(predicate::str::contains(note_path.to_string_lossy()));
 
-    let contents = fs::read_to_string(&note_path).unwrap();
+    let contents = fs::read_to_string(&note_path)
+        .with_context(|| format!("Could not: read file {:?}", &note_path))
+        .unwrap();
     assert_eq!("", contents);
 
     Ok(fs::remove_file(&note_path)?)
@@ -111,11 +100,34 @@ fn can_use_the_default_filetype() -> Result<(), Box<dyn std::error::Error>> {
         .success()
         .stdout(predicate::str::contains(note_path.to_string_lossy()));
 
-    let contents = fs::read_to_string(format!("{}.md", note_path.to_string_lossy())).unwrap();
+    let contents = fs::read_to_string(format!("{}.md", note_path.to_string_lossy()))
+        .with_context(|| format!("Could not: read file {:?}", &note_path))
+        .unwrap();
     assert_eq!("", contents);
 
     Ok(fs::remove_file(format!(
         "{}.md",
         note_path.to_string_lossy()
     ))?)
+}
+
+#[test]
+fn can_use_format_dates() -> Result<(), Box<dyn std::error::Error>> {
+    let name = unique_file_name("test_name", "md");
+    let note_path = setup_notes_dir()?.join(&name);
+
+    let mut cmd = Command::cargo_bin("notes-cli")?;
+    cmd.args(["--config-path", "./test-config"])
+        .arg("new")
+        .arg(&name)
+        .args(["--template", "test-template"]);
+
+    cmd.assert().success();
+
+    let contents = fs::read_to_string(&note_path)
+        .with_context(|| format!("Could not: read file {:?}", &note_path))
+        .unwrap();
+    assert!(predicate::str::contains("Date formatted: 02/01/2023").eval(&contents));
+
+    Ok(fs::remove_file(&note_path)?)
 }
