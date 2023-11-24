@@ -131,3 +131,28 @@ fn can_use_format_dates() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(fs::remove_file(&note_path)?)
 }
+
+#[test]
+fn can_use_metadata_flat_in_template() -> Result<(), Box<dyn std::error::Error>> {
+    let name = unique_file_name("test_name", "md");
+    let note_path = setup_notes_dir()?.join(&name);
+
+    let mut cmd = Command::cargo_bin("notes-cli")?;
+    cmd.args(["--config-path", "./test-config"])
+        .arg("new")
+        .arg(&name)
+        .args(["--template", "test-meta"])
+        .args(["--meta-data", "test_key_1:test-value1"])
+        .args(["--meta-data", "test_key_2:test-value2"]);
+
+    cmd.assert().success();
+
+    let contents = fs::read_to_string(&note_path)
+        .with_context(|| format!("Could not: read file {:?}", &note_path))
+        .unwrap();
+    assert!(predicate::str::contains("test-value1").eval(&contents));
+    assert!(predicate::str::contains("test-value2").eval(&contents));
+    assert!(predicate::str::contains("Max Hill").eval(&contents));
+
+    Ok(fs::remove_file(&note_path)?)
+}

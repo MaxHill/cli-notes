@@ -6,8 +6,8 @@ templates_dir = "./test-config/templates"
 ls = "sh ./list-all-notes {{meta.list-flags}}™"
 new-meeting = "create-meetings-binary {{setup.notes-dir}}"
 
- # variables that can be used in substitution
- # should work to use in templates with https://github.com/sunng87/handlebars-rust
+# Meta get's merged with NewNote object and 
+# can be accessed in template as for example {{meta.who}}
 [meta]
 author = "Max"
 list-flags = "-la"

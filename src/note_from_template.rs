@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::{fs::File, path::PathBuf};
 use time::macros::format_description;
 use time::{
@@ -22,6 +23,7 @@ pub struct NoteFromTemplate {
     pub name: String,
     pub name_template: String,
     pub now: String,
+    pub meta: HashMap<String, String>,
 }
 
 // a helper provides format
@@ -48,6 +50,7 @@ impl NoteFromTemplate {
         template: Option<&String>,
         name: String,
         name_template: Option<&String>,
+        meta: HashMap<String, String>,
     ) -> Self {
         let template = template
             .unwrap_or(&EMPTY_TEMPLATE_NAME.to_string())
@@ -60,6 +63,7 @@ impl NoteFromTemplate {
             name,
             name_template,
             now: OffsetDateTime::now_utc().to_string(),
+            meta: meta.into_iter().chain(config.meta.clone()).collect(),
         }
     }
 
@@ -77,7 +81,6 @@ impl NoteFromTemplate {
 
     pub fn write(self) -> anyhow::Result<PathBuf> {
         let output_file_path = PathBuf::from(&self.config.notes_dir).join(self.get_file_name()?);
-        println!("{:?}", self.get_file_name());
 
         let mut output_file = File::create(&output_file_path).with_context(|| {
             format!("Could not create file or directory {:?}", output_file_path)
