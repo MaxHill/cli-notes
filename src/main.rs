@@ -1,17 +1,20 @@
-pub mod config;
-pub mod note_from_template;
-
-use std::collections::HashMap;
-
 use crate::{config::get_config_path, note_from_template::NoteFromTemplate};
 use anyhow::anyhow;
 use clap::{command, parser::ValuesRef, Arg, ArgAction, Command};
 use config::Config;
+use std::{collections::HashMap, ffi::OsString, os::unix::process::CommandExt};
+use subcommand::SubCommand;
+
+pub mod config;
+pub mod note_from_template;
+pub mod subcommand;
+pub mod templating;
 
 fn cmd() -> Command {
     command!() // requires `cargo` feature
         .propagate_version(true)
         .subcommand_required(true)
+        .allow_external_subcommands(true)
         .arg_required_else_help(true)
         .arg(
             Arg::new("config-path")
@@ -84,37 +87,9 @@ fn main() -> anyhow::Result<()> {
 
             println!("{}", created_file.display());
         }
+        Some(matching) => SubCommand::try_new(&config, matching)?.run()?,
         _ => unreachable!("Exhausted list of subcommands and subcommand_required prevents `None`"),
     }
 
     Ok(())
-}
-
-#[cfg(test)]
-mod test {
-
-    use super::*;
-
-    #[test]
-    fn can_parse_metadata() {
-        let m = Command::new("test")
-            .arg(Arg::new("test").short('t').action(ArgAction::Append))
-            .get_matches_from(vec![
-                "test",
-                "-t",
-                "arg1",
-                "-t",
-                "k_one:v_one",
-                "-t",
-                "k_two:v_two",
-            ]);
-
-        assert_eq!(
-            HashMap::from([
-                ("k_one".to_string(), "v_one".to_string()),
-                ("k_two".to_string(), "v_two".to_string())
-            ]),
-            parse_metadata(m.get_many("test"))
-        )
-    }
 }

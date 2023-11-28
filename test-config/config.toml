@@ -1,17 +1,31 @@
-editor = "vim"
+#editor = "vim" # Defaults to $EDITOR env variable
 notes_dir = "/tmp/cli-notes-test-dir"
 templates_dir = "./test-config/templates"
 
+# Subcommands are launched with sh -c {{command}}
+# which means you can cd and do whatever you want because when
+# it finishes it will return to where you were.
+#
+# Subcommands are also templates which get's passed the following object:
+# {
+#   // This very config
+#   config: Config,
+#   // Flags passed to ex. Given `note subcommand thing --f1 a --f2 b` flags would equal "thing --f1 a --f2 b"
+#   args: String,
+# }
+# This means you can put the flags wherever you want in the command.
 [subcommands]
-ls = "sh ./list-all-notes {{meta.list-flags}}™"
+# Search filenames with fzf and open in default editor
+find = "cd {{config.notes_dir}} && open -e $(fzf {{flags}})"
 new-meeting = "create-meetings-binary {{setup.notes-dir}}"
 
-# Meta get's merged with NewNote object and 
-# can be accessed in template as for example {{meta.who}}
+test-echo = "echo \"{{args}}\""
+
+# Meta can also be added to on a per request basis
+# using the -m/--meta-data KEY:VALUE flag.
+# Meta can be accessed in template like this: {{config.meta.who}}
 [meta]
-author = "Max"
-list-flags = "-la"
 who = "Max Hill"
-# timestamp = "1700766386383"
+author = "Max"
 timestamp = "2023-01-02T18:00:00"
 

@@ -1,3 +1,5 @@
+mod subcommand_test;
+
 use anyhow::Context;
 use assert_cmd::prelude::*; // Add methods on commands
 use predicates::prelude::*;

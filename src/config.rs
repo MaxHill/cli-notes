@@ -13,7 +13,7 @@ fn default_file_md() -> String {
 pub struct Config {
     #[serde(default = "default_file_md")]
     pub note_file_type: String,
-    pub editor: String,
+    pub editor: Option<String>,
     pub notes_dir: PathBuf,
     pub templates_dir: PathBuf,
 
@@ -33,6 +33,12 @@ impl Config {
             .with_context(|| format!("Could not find config file: {:?}", filename))?;
         toml::from_str::<Config>(&contents)
             .with_context(|| format!("Could not construct Config from {:?}", contents))
+    }
+
+    pub fn clone_add_meta(&self, meta: HashMap<String, String>) -> Config {
+        let mut c = self.clone();
+        c.meta = meta.into_iter().chain(self.meta.clone()).collect();
+        c.clone()
     }
 }
 pub fn get_config_path(flag: Option<&String>) -> anyhow::Result<PathBuf> {
@@ -57,7 +63,7 @@ mod test {
     fn it_can_get_config_from_file() {
         match Config::new_from_path("./test-config/") {
             Ok(config) => {
-                assert_eq!(config.editor, "vim");
+                assert_eq!(config.notes_dir, PathBuf::from("/tmp/cli-notes-test-dir"));
             }
             Err(e) => {
                 panic!("Error when getting config: {}", e);
