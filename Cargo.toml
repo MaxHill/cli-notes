@@ -1,0 +1,21 @@
+[package]
+name = "notes-cli"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.75"
+clap = { version = "4.4.8", features = ["cargo"] }
+handlebars = { version = "4.5.0", features = ["dir_source"] }
+serde = {version = "1.0.192", features = ["derive"] }
+serde_json = "1.0.108"
+time = { version = "0.3.30", features = ["formatting", "parsing", "std", "macros"] }
+toml = "0.8.8"
+
+
+[dev-dependencies]
+assert_cmd = "2.0"
+predicates = "2.1"
+uuid = { version = "1.6.1", features = ["v4"] }

@@ -1,0 +1,132 @@
+name: Create GH Release
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: cargo clippy 
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: cargo test 
+
+  bump-version:
+    needs: ["test", "lint"]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: '0'
+
+    - 
+      id: tag
+      name: Bump version and push tag
+      uses: anothrNick/github-tag-action@1.64.0 # Don't use @master or @v1 unless you're happy to test the latest version
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # if you don't want to set write permissions use a PAT token
+        WITH_V: true
+
+
+  build-mac:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v2
+        with:
+          path: target
+          key: ${{ runner.OS }}-build-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.OS }}-build-
+
+      - name: Install latest rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: x86_64-apple-darwin
+          default: true
+          override: true
+
+      - name: Build for mac
+        run: cargo build --all --release 
+
+      - name: Compress archive
+        run: cd target/release && tar -czf notes-cli.tar.gz notes-cli
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: release
+          path: |
+            target/release/notes-cli
+            target/release/*.tar.gz
+
+  release:
+    needs: ["build-mac", "bump-version"]
+    runs-on: macos-latest
+    outputs:
+      tar-path: ${{ steps.tar.outputs.tar-path }}
+      tar-sha: ${{ steps.tar.outputs.tar-sha }}
+    steps:
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: release
+
+      - id: release
+        uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: ${{needs.bump-version.outputs.tag}}
+          prerelease: false
+          # Files get put in root because of download artifact
+          files: |
+            notes-cli
+            *.tar.gz
+
+
+      - name: Build archive (Unix)
+        id: tar
+        shell: bash
+        run: |
+          SHA=($(shasum -a 256 'notes-cli.tar.gz'))
+          echo "tar-sha=$SHA" >> $GITHUB_OUTPUT
+          # echo "tar-sha=$(shasum -a 256 'notes-cli.tar.gz' | sed 's/  -//')" >> $GITHUB_OUTPUT
+          echo "tar-path=${{ github.server_url }}/${{ github.repository }}/releases/download/${{needs.bump-version.outputs.tag}}/notes-cli.tar.gz" >> "$GITHUB_OUTPUT"
+  
+  publish-to-tap:
+    needs: ["release", "bump-version"]
+    runs-on: ubuntu-latest
+    steps:
+      - name: tar
+        run: echo "${{needs.release.outputs.tar-path}}"
+      - name: sha
+        run: echo "${{needs.release.outputs.tar-sha}}"
+
+      - name: Load secret
+        id: op-load-secret
+        uses: 1password/load-secrets-action@v1
+        with:
+          export-env: false
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: "${{secrets.OP_SERVICE_ACCOUNT_TOKEN}}"
+          PAT: "op://homebrew-tap/github-pat/token"
+
+      - name: Trigger publish
+        run: |
+          curl -XPOST -u "MaxHill:${{ steps.op-load-secret.outputs.PAT }}" -H "Accept: application/vnd.github.everest-preview+json" -H "Content-Type: application/json" https://api.github.com/repos/MaxHill/homebrew-tap/dispatches --data '{"event_type": "build_application", "client_payload": { "tar-path": "${{needs.release.outputs.tar-path}}", "tar-sha": "${{needs.release.outputs.tar-sha}}", "version": "${{needs.bump-version.outputs.tag}}", "formula": "notes-cli"}}'
