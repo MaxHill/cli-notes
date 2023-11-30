@@ -27,12 +27,9 @@ pub struct Config {
 impl Config {
     pub fn try_new(matches: &ArgMatches) -> anyhow::Result<Config> {
         let config_path = get_config_path(matches.get_one::<String>("config-path"))?;
-        print!("CONFIG: {:?}", config_path);
         let additional_metadata = parse_metadata(matches.get_many::<String>("meta-data"));
 
-        // let filename = PathBuf::from(config_path).join("config.toml");
         let filename = config_path.join("config.toml");
-        print!("FILENAME:{:?}", filename);
 
         let contents = fs::read_to_string(&filename)
             .with_context(|| format!("Could not find config file: {:?}", filename))?;
