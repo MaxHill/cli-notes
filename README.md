@@ -1,15 +1,15 @@
+# Install
+```
+brew tap MaxHill/tap
+brew install cli-notes
+```
 
 # Create a new note
 
 To create a new note use the command `note new name_of_note`.
 
 ```
-cargo run -- new --help
-   Compiling notes-cli v0.1.0 (/Users/maxhill/code/personal/cli-notes)
-    Finished dev [unoptimized + debuginfo] target(s) in 0.54s
-     Running `target/debug/notes-cli new --help`
-Creates note from specified template
-
+$ notes-cli new --help
 Usage: notes-cli new [OPTIONS] <name>
 
 Arguments:

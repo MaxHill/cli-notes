@@ -1,4 +1,5 @@
 #editor = "vim" # Defaults to $EDITOR env variable
+#note_file_type = "md" # Defaults to ""
 notes_dir = "/tmp/cli-notes-test-dir"
 templates_dir = "./test-config/templates"
 

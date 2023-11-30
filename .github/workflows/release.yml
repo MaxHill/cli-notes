@@ -1,4 +1,4 @@
-name: Create GH Release
+name: Create Release
 
 on:
   push:
@@ -17,28 +17,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: cargo test 
-
-  bump-version:
-    needs: ["test", "lint"]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    outputs:
-      tag: ${{ steps.tag.outputs.tag }}
-
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: '0'
-
-    - 
-      id: tag
-      name: Bump version and push tag
-      uses: anothrNick/github-tag-action@1.64.0 # Don't use @master or @v1 unless you're happy to test the latest version
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # if you don't want to set write permissions use a PAT token
-        WITH_V: true
-
 
   build-mac:
     runs-on: macos-latest
@@ -75,6 +53,28 @@ jobs:
           path: |
             target/release/notes-cli
             target/release/*.tar.gz
+
+  bump-version:
+    needs: ["test", "lint"]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: '0'
+
+    - 
+      id: tag
+      name: Bump version and push tag
+      uses: anothrNick/github-tag-action@1.64.0 # Don't use @master or @v1 unless you're happy to test the latest version
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # if you don't want to set write permissions use a PAT token
+        WITH_V: true
+
 
   release:
     needs: ["build-mac", "bump-version"]
