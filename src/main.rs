@@ -1,9 +1,11 @@
 use crate::new_note::NewNote;
 use clap::{command, Arg, ArgAction, Command};
 use config::Config;
+use list::ListNotes;
 use subcommand::SubCommand;
 
 pub mod config;
+pub mod list;
 pub mod new_note;
 pub mod subcommand;
 pub mod templating;
@@ -30,6 +32,7 @@ pub fn cmd() -> Command {
                 .help("Aditional key value pairs to be added to config. Ex. --meta-data name:John"),
         )
         .subcommand(NewNote::cmd())
+        .subcommand(ListNotes::cmd())
 }
 
 fn main() -> anyhow::Result<()> {
@@ -42,6 +45,7 @@ fn main() -> anyhow::Result<()> {
             "{}",
             NewNote::try_new(&config, sub_matches)?.write()?.display()
         ),
+        Some(("ls", _)) => ListNotes::new(&config).run(),
         Some(matching) => SubCommand::try_new(&config, matching)?.run()?,
         _ => unreachable!("Exhausted list of subcommands and subcommand_required prevents `None`"),
     }

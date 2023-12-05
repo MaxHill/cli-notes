@@ -1,0 +1,7 @@
+notes_dir = "./test-config-ls/notes-dir"
+templates_dir = "./test-config/templates"
+
+[subcommands]
+
+[meta]
+
