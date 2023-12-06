@@ -1,13 +1,9 @@
-use crate::new_note::NewNote;
 use clap::{command, Arg, ArgAction, Command};
+use commands::{ls::ListNotes, new_note::NewNote, subcommand::SubCommand};
 use config::Config;
-use ls::ListNotes;
-use subcommand::SubCommand;
 
+mod commands;
 mod config;
-mod ls;
-mod new_note;
-mod subcommand;
 mod templating;
 mod utils;
 
