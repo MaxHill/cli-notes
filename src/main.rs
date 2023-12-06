@@ -1,15 +1,15 @@
 use crate::new_note::NewNote;
 use clap::{command, Arg, ArgAction, Command};
 use config::Config;
-use list::ListNotes;
+use ls::ListNotes;
 use subcommand::SubCommand;
 
-pub mod config;
-pub mod list;
-pub mod new_note;
-pub mod subcommand;
-pub mod templating;
-pub mod utils;
+mod config;
+mod ls;
+mod new_note;
+mod subcommand;
+mod templating;
+mod utils;
 
 pub fn cmd() -> Command {
     command!() // requires `cargo` feature

@@ -43,27 +43,6 @@ impl NewNote {
             meta: meta.into_iter().chain(config.meta.clone()).collect(),
         })
     }
-    pub fn new(
-        config: &Config,
-        template: Option<&String>,
-        name: String,
-        name_template: Option<&String>,
-        meta: HashMap<String, String>,
-    ) -> Self {
-        let template = template
-            .unwrap_or(&EMPTY_TEMPLATE_NAME.to_string())
-            .to_string();
-        let name_template = name_template.unwrap_or(&"{{name}}".to_string()).to_string();
-
-        NewNote {
-            config: config.to_owned(),
-            template,
-            name,
-            name_template,
-            now: OffsetDateTime::now_utc().to_string(),
-            meta: meta.into_iter().chain(config.meta.clone()).collect(),
-        }
-    }
 
     fn get_file_name(&self) -> anyhow::Result<PathBuf> {
         let data = serde_json::to_value(self)?;
