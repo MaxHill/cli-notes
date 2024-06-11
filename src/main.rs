@@ -7,6 +7,7 @@ mod config;
 mod templating;
 mod utils;
 
+#[tracing::instrument]
 pub fn cmd() -> Command {
     command!() // requires `cargo` feature
         .propagate_version(true)
@@ -17,7 +18,7 @@ pub fn cmd() -> Command {
             Arg::new("config-path")
                 .short('c')
                 .long("config-path")
-                .help("Provide a path to the config directory. Default is $XDG_CONFIG_HOME"),
+                .help("Provide a path to the config directory. Default is $XDG_CONFIG_HOME/notes-cli/cofnig.toml"),
         )
         .arg(
             Arg::new("meta-data")
@@ -31,7 +32,10 @@ pub fn cmd() -> Command {
         .subcommand(ListNotes::cmd())
 }
 
+#[tracing::instrument]
 fn main() -> anyhow::Result<()> {
+    tracing_subscriber::fmt::init();
+
     let matches = cmd().get_matches();
 
     let config = Config::try_new(&matches)?;

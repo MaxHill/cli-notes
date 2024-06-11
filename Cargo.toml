@@ -13,9 +13,15 @@ serde = {version = "1.0.192", features = ["derive"] }
 serde_json = "1.0.108"
 time = { version = "0.3.30", features = ["formatting", "parsing", "std", "macros"] }
 toml = "0.8.8"
+tracing = "0.1.40"
+tracing-subscriber = { version = "0.3.18", features = ["fmt", "env-filter"] }
+
 
 
 [dev-dependencies]
 assert_cmd = "2.0"
 predicates = "2.1"
 uuid = { version = "1.6.1", features = ["v4"] }
+test-log = { version = "0.2.13", default-features = false, features = [
+    "trace",
+] }

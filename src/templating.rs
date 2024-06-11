@@ -31,6 +31,7 @@ handlebars_helper!(date: |dt: String, {fmt:str = "[year]-[month]-[day]"}| {
 
 pub static EMPTY_TEMPLATE_NAME: &str = "empty";
 
+#[tracing::instrument]
 pub fn get_templates(config: &Config) -> anyhow::Result<Handlebars> {
     let mut handlebars = Handlebars::new();
 
@@ -58,7 +59,7 @@ mod test {
     use handlebars::Handlebars;
     use serde_json::json;
 
-    #[test]
+    #[test_log::test]
     fn can_parse_iso_date() {
         let mut handlebars = Handlebars::new();
         handlebars.register_helper("date", Box::new(date));
@@ -76,7 +77,7 @@ mod test {
         assert_eq!("2023-01-01", t);
     }
 
-    #[test]
+    #[test_log::test]
     fn can_parse_rfc3339_date() {
         let mut handlebars = Handlebars::new();
         handlebars.register_helper("date", Box::new(date));
@@ -88,7 +89,7 @@ mod test {
         assert_eq!("2023-01-01", t);
     }
 
-    #[test]
+    #[test_log::test]
     fn can_parse_rfc2822_date() {
         let mut handlebars = Handlebars::new();
         handlebars.register_helper("date", Box::new(date));
@@ -100,7 +101,7 @@ mod test {
         assert_eq!("2023-01-01", t);
     }
 
-    #[test]
+    #[test_log::test]
     fn can_parse_custom_date() {
         let mut handlebars = Handlebars::new();
         handlebars.register_helper("date", Box::new(date));
@@ -112,7 +113,7 @@ mod test {
         assert_eq!("2023-01-01", t);
     }
 
-    #[test]
+    #[test_log::test]
     fn can_parse_custom2_date() {
         let mut handlebars = Handlebars::new();
         handlebars.register_helper("date", Box::new(date));
@@ -124,7 +125,7 @@ mod test {
         assert_eq!("2023-01-01", t);
     }
 
-    #[test]
+    #[test_log::test]
     fn can_parse_custom3_date() {
         let mut handlebars = Handlebars::new();
         handlebars.register_helper("date", Box::new(date));

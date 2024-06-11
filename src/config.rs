@@ -54,7 +54,7 @@ pub fn get_config_path(flag: Option<&String>) -> anyhow::Result<PathBuf> {
         Err(_) => {
             let xdg_config_home = std::env::var("XDG_CONFIG_HOME")
                 .context("Could not find env variable XDG_CONFIG_HOME")?;
-            Ok(Path::new(&xdg_config_home).join("/notes-cli"))
+            Ok(Path::new(&xdg_config_home).join("notes-cli"))
         }
     }
 }

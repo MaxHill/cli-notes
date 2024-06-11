@@ -11,12 +11,14 @@ pub struct ListNotes {
 }
 
 impl ListNotes {
+    #[tracing::instrument]
     pub fn new(config: &Config) -> Self {
         ListNotes {
             config: config.clone(),
         }
     }
 
+    #[tracing::instrument]
     pub fn run(&self) {
         std::process::Command::new("ls")
             .arg("-1")
@@ -24,6 +26,7 @@ impl ListNotes {
             .exec();
     }
 
+    #[tracing::instrument]
     pub fn cmd() -> Command {
         Command::new("ls").about("List all notes")
     }

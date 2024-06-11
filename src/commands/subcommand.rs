@@ -14,6 +14,7 @@ pub struct SubCommand {
 }
 
 impl SubCommand {
+    #[tracing::instrument]
     pub fn try_new(
         config: &Config,
         (subcommand, sub_matches): (&str, &ArgMatches),
@@ -39,6 +40,7 @@ impl SubCommand {
         })
     }
 
+    #[tracing::instrument]
     pub fn run(&self) -> anyhow::Result<()> {
         let data = serde_json::to_value(self)?;
         let cmd = templating::get_templates(&self.config)?.render_template(&self.cmd, &data)?;

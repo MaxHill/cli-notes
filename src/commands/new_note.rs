@@ -19,6 +19,7 @@ pub struct NewNote {
 }
 
 impl NewNote {
+    #[tracing::instrument]
     pub fn try_new(config: &Config, sub_matches: &ArgMatches) -> anyhow::Result<NewNote> {
         let meta = parse_metadata(sub_matches.get_many::<String>("meta-data"));
         let template = sub_matches
@@ -44,9 +45,9 @@ impl NewNote {
         })
     }
 
+    #[tracing::instrument]
     fn get_file_name(&self) -> anyhow::Result<PathBuf> {
         let data = serde_json::to_value(self)?;
-
         let mut file = get_templates(&self.config)?
             .render_template(&self.name_template, &data)
             .map(PathBuf::from)?;
@@ -55,6 +56,7 @@ impl NewNote {
         Ok(file)
     }
 
+    #[tracing::instrument]
     pub fn write(self) -> anyhow::Result<PathBuf> {
         let output_file_path = PathBuf::from(&self.config.notes_dir).join(self.get_file_name()?);
 
@@ -75,6 +77,7 @@ impl NewNote {
         Ok(output_file_path)
     }
 
+    #[tracing::instrument]
     pub fn cmd() -> Command {
         Command::new("new")
         .about("Creates note from specified template")
