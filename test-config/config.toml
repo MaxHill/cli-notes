@@ -17,7 +17,7 @@ templates_dir = "./test-config/templates"
 # This means you can put the flags wherever you want in the command.
 [subcommands]
 # Search filenames with fzf and open in default editor
-find = "cd {{config.notes_dir}} && open -e $(fzf {{flags}})"
+find = "cd {{config.notes_dir}} && $EDITOR $(fzf {{flags}})"
 new-meeting = "create-meetings-binary {{setup.notes-dir}}"
 
 test-echo = "echo \"{{args}}\""

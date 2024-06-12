@@ -7,7 +7,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::utils::parse_metadata;
+use crate::utils::{parse_metadata, parse_metadata_json};
 
 fn default_file_md() -> String {
     "md".to_string()
@@ -27,7 +27,12 @@ pub struct Config {
 impl Config {
     pub fn try_new(matches: &ArgMatches) -> anyhow::Result<Config> {
         let config_path = get_config_path(matches.get_one::<String>("config-path"))?;
-        let additional_metadata = parse_metadata(matches.get_many::<String>("meta-data"));
+        let mut additional_metadata = parse_metadata(matches.get_many::<String>("meta-data"));
+        let additional_metadata_json =
+            parse_metadata_json(matches.get_many::<String>("meta-data-json"));
+        for (key, value) in additional_metadata_json {
+            additional_metadata.insert(key, value);
+        }
 
         let filename = config_path.join("config.toml");
 
@@ -92,6 +97,12 @@ mod test {
                     .action(ArgAction::Append)
                     .help("Aditional key value pairs to be added to config. Ex. --meta-data name:John"),
             )
+            .arg(
+                Arg::new("meta-data-json")
+                    .long("meta-data-json")
+                    .value_name("json")
+                    .action(ArgAction::Append)
+                    .help("Aditional key value pairs to be added to config, passed as json. Ex. --meta-data-json \"{\"name\": \"John\"}\""),)
             .get_matches_from(f)
     }
 
@@ -127,6 +138,21 @@ mod test {
         match Config::try_new(&get_matches_from(
             "test-config",
             Some(vec!["--meta-data", "some:value"]),
+        )) {
+            Ok(config) => {
+                assert_eq!("value", config.meta.get("some").unwrap());
+            }
+            Err(e) => {
+                panic!("Error when getting config: {}", e);
+            }
+        };
+    }
+
+    #[test]
+    fn adds_metadata_to_configs_metadata_in_json_format() {
+        match Config::try_new(&get_matches_from(
+            "test-config",
+            Some(vec!["--meta-data-json", "{\"some\": \"value\"}"]),
         )) {
             Ok(config) => {
                 assert_eq!("value", config.meta.get("some").unwrap());

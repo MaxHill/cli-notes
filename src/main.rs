@@ -28,6 +28,12 @@ pub fn cmd() -> Command {
                 .action(ArgAction::Append)
                 .help("Aditional key value pairs to be added to config. Ex. --meta-data name:John"),
         )
+        .arg(
+            Arg::new("meta-data-json")
+                .long("meta-data-json")
+                .value_name("json")
+                .action(ArgAction::Append)
+                .help("Aditional key value pairs to be added to config, passed as json. Ex. --meta-data-json \"{\"name\": \"John\"}\""),)
         .subcommand(NewNote::cmd())
         .subcommand(ListNotes::cmd())
 }

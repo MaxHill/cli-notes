@@ -1,19 +1,72 @@
 # Notes CLI
 Notes CLI is a simple command-line interface (CLI) tool designed to streamline your note-taking experience through the creation of a customized note system. It introduces two fundamental building blocks: templates and subcommands, offering flexibility and extensibility.
 
+# Development
+## Run application
+Run in development
+```bash
+cargo run -- [new|ls|..]
+```
+
+Create note passing alternative config file
+```bash
+notes-cli -c ./test-config
+```
+
 # Installation
 Install CLI Notes using Homebrew:
-```
+```bash
 brew tap MaxHill/tap
-brew install cli-notes
+brew install notes-cli
+```
+
+#  Update
+```bash
+brew unlink notes-cli
+brew install maxhill/tap/notes-cli
 ```
 
 # Creating a new note
 To create a new note, use the following command:
-`note new name_of_note`
+```bash
+note new name_of_note
+```
+
+## More examples
+Create note passing alternative config file
+```bash
+notes-cli -c ./test-config new note-name
+```
+
+Create note passing additional metadata that can be used in template/name:
+```bash
+notes-cli -m "name:max" -m "lastName:hill" new note-name 
+# or
+notes-cli --meta-data "name:max" --meta-data "lastName:hill" new note-name 
+```
+
+Create note passing additional metadata that can be used in template/name:
+```bash
+notes-cli -m "name:max" -m "lastName:hill" new note-name 
+# or
+notes-cli --meta-data "name:max" --meta-data "lastName:hill" new note-name 
+
+# or in json format
+notes-cli --meta-data-json "{\"name\": \"max\"}" --meta-data-json "{\"lastName\":\"hill\"}" new note-name 
+
+# or in one json object
+notes-cli --meta-data-json "{\"name\": \"max\", \"lastName\":\"hill\"}" new note-name 
+```
+
+All of the above can also be passed to the new sub command:
+```bash
+notes-cli new note-name -m "name:max" -m "lastName:hill"
+```
+
+
 
 Explore all available options using the help command:
-```
+```bash
 $ notes-cli new --help
 Usage: notes-cli new [OPTIONS] <name>
 
@@ -27,22 +80,22 @@ Options:
           Handlebars template string for name. Ex. --name_template {{date now}}_{{name}}
   -m, --meta-data <KEY:VALUE>
           Key value to be passed to template. Ex. --meta-data name:John
+      --meta-data-json <json>
+          Key value to be passed to template in json format. Ex. --meta-data-json "{"name": "John"}"
   -h, --help
           Print help
   -V, --version
           Print version
 ```
+
 ## Template usage
-Let's consider an example template located at `~/.config/notes-cli/templates/simple.hbs` with the following content:
-```
-// ~/.config/notes-cli/templates/simple.hbs
-Simple note created using {{template}}
-```
+Let's consider an example template located at `~/.config/notes-cli/templates/simple.hbs` with the following content: `Simple note created using {{template}}`
 
 To create a new note using this template, use the following command:
-```
+```bash
 notes-cli new note-name --template simple
 ```
+
 This command will generate a new note named note-name based on the specified 
 simple template. Feel free to explore and create your own templates to suit 
 your note-taking preferences.
@@ -51,15 +104,14 @@ your note-taking preferences.
 Note templates are stored in the folder specified in 
 `~/.config/notes-cli/config.toml`, defaulting to `~/.config/notes-cli/templates/`.
 
-
 Each template receives the following object:
-```
+```rust
 NewNote {
      template: String, // Name of template to be used
      name: String, // Name of the note
      name_template: String, // Template string for name
      now: String, // ISO8601 timestamp for when note is created
-     meta: HashMap<String, String> // Merger of --meta-data flag and meta table in config
+     meta: HashMap<String, String> // Merger of --meta-data,--meta-date-json flag and meta table in config
      config: { // Config object specified in config.toml
          note_file_type: String,
          editor: String,
@@ -105,19 +157,18 @@ Subcommands are encouraged for extended functionality.
 Define custom subcommands in the configuration file.
 
 ## Example subcommand 
-```
+```toml
 # ~/.config/notes-cli/config.toml
 ...
 [subcommands]
 # Search filenames with fzf and open in default editor
-find = "cd {{config.notes_dir}} && open -e $(fzf {{flags}})"
+find = "cd {{config.notes_dir}} && $EDITOR $(fzf {{flags}})"
 
 ```
 
 ## Subcommand tamplates
 Each subcommand in the config file is a template-string that receives the following object
-
-```
+```rust
 SubCommand {
     cmd: String, // Command template-string
     args: String, // Arguments and flags passed to the command

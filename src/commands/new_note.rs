@@ -6,7 +6,7 @@ use time::OffsetDateTime;
 
 use crate::config::Config;
 use crate::templating::{get_templates, EMPTY_TEMPLATE_NAME};
-use crate::utils::parse_metadata;
+use crate::utils::{parse_metadata, parse_metadata_json};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct NewNote {
@@ -21,7 +21,12 @@ pub struct NewNote {
 impl NewNote {
     #[tracing::instrument]
     pub fn try_new(config: &Config, sub_matches: &ArgMatches) -> anyhow::Result<NewNote> {
-        let meta = parse_metadata(sub_matches.get_many::<String>("meta-data"));
+        let mut meta = parse_metadata(sub_matches.get_many::<String>("meta-data"));
+        let meta_json = parse_metadata_json(sub_matches.get_many::<String>("meta-data-json"));
+        for (key, value) in meta_json {
+            meta.insert(key, value);
+        }
+
         let template = sub_matches
             .get_one::<String>("template")
             .unwrap_or(&EMPTY_TEMPLATE_NAME.to_string())
@@ -107,6 +112,13 @@ impl NewNote {
                 .value_name("KEY:VALUE")
                 .action(ArgAction::Append)
                 .help("Key value to be passed to template. Ex. --meta-data name:John"),
+        )
+        .arg(
+            Arg::new("meta-data-json")
+                .long("meta-data-json")
+                .value_name("json")
+                .action(ArgAction::Append)
+                .help("Key value to be passed to template in json format. Ex. --meta-data-json \"{\"name\": \"John\"}\""),
         )
     }
 }
