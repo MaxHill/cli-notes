@@ -130,3 +130,4 @@ jobs:
       - name: Trigger publish
         run: |
           curl -XPOST -u "MaxHill:${{ steps.op-load-secret.outputs.PAT }}" -H "Accept: application/vnd.github.everest-preview+json" -H "Content-Type: application/json" https://api.github.com/repos/MaxHill/homebrew-tap/dispatches --data '{"event_type": "build_application", "client_payload": { "tar-path": "${{needs.release.outputs.tar-path}}", "tar-sha": "${{needs.release.outputs.tar-sha}}", "version": "${{needs.bump-version.outputs.tag}}", "formula": "notes-cli"}}'
+
